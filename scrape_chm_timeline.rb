@@ -34,10 +34,10 @@ def get_tdih(month,day_number)
     items = doc.xpath("//div[contains(@class,'tdihevent')]/p[contains(@class,'subtitle')]").collect {|node| node.text.strip}
     #puts "#{month} #{day_number.to_s}:" 
     entries = dates.zip(items)
-    entries.each {|d,i| puts "#{d}  #{i}"}
+    entries.collect {|d,i| "#{d}  #{i}"}
 end
 
 DAYS_TO_CHECK = {January:1..31,February:1..28,March:1..31,April:1..30,May:1..31,June:1..30,July:1..31,August:1..31,September:1..30,October:1..31,November:1..30,December:1..31}
 DAYS_TO_CHECK.each do |month,day_range|
-    day_range.each  {|day_number| get_tdih month,day_number   }
+    day_range.each  {|day_number| puts get_tdih month,day_number   }
 end
