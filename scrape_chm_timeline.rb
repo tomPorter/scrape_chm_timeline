@@ -1,5 +1,9 @@
 require 'nokogiri'
 require 'open-uri'
+require 'icalendar'
+require 'date'
+require 'chronic'
+include Icalendar
 #            <div id="tdihbody">
 #                <!-- Computing History Content starts here -->
 #                <div class="tdihevent">
@@ -27,17 +31,35 @@ require 'open-uri'
 #                </div>
 #               <!-- Computing History Content ends here -->
 
-def get_tdih(month,day_number)
+def get_tdih(month,day_number,cal)
     # Looking for div class="tdihevent", p class="subtitle"
     doc = Nokogiri::HTML(open("http://www.computerhistory.org/tdih/#{month}/#{day_number.to_s}/"))
     dates = doc.xpath("//div[contains(@class,'tdihevent')]/h3[contains(@class,'title')]").collect {|node| node.text.strip}
     items = doc.xpath("//div[contains(@class,'tdihevent')]/p[contains(@class,'subtitle')]").collect {|node| node.text.strip}
     #puts "#{month} #{day_number.to_s}:" 
     entries = dates.zip(items)
-    entries.collect {|d,i| "#{d}  #{i}"}
+    entries.each do |d,i| 
+        start_time = Chronic.parse("#{month} #{day_number.to_s}, 2014").to_date
+        end_time = start_time + 1
+        year_string = d.split[-1]
+        cal.event do
+            dtstart start_time,     ical_params = {"VALUE"=>"DATE"}
+            dtend   end_time,       ical_params = {"VALUE"=>"DATE"}
+            summary "#{year_string}: #{i}"
+        end
+
+    end
 end
+
+cal = Calendar.new
 
 DAYS_TO_CHECK = {January:1..31,February:1..28,March:1..31,April:1..30,May:1..31,June:1..30,July:1..31,August:1..31,September:1..30,October:1..31,November:1..30,December:1..31}
 DAYS_TO_CHECK.each do |month,day_range|
-    day_range.each  {|day_number| puts get_tdih month,day_number   }
+    day_range.each  {|day_number| get_tdih month,day_number,cal   }
 end
+
+cal_string = cal.to_ical
+File.open('ch.ics','w') do |fh|
+    fh.puts cal_string
+end
+
